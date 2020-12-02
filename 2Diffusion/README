@@ -1,0 +1,25 @@
+This directory has a script that computes the diffusion coefficient of
+a 3d FCC-Cu liquid using Einstein relation.
+
+-------------
+
+The method computes the slope of the mean-squared displacement (MSD) of the
+atoms.  In this case a single time origin is used.  This allows the diffusion coefficient to be estimated
+on-the-fly using variables in the LAMMPS input scripts.  For better
+statistics you typically want to use multiple time origins,
+post-processing the data from dump files.
+
+-------------
+
+Here is how to extract the diffusion coefficient from the log file
+output for each method.
+
+(1) in.msd.2d
+
+The 5rd column of output is the instantaneous mean-squared
+displacment, which grows over time.  The 6th column estimates the
+slope of the MSD from its two end-points, and uses it to compute the
+diffusion coefficient.  The 7th column fits a straight line to the
+entire (growing) set of MSD data and uses the slope of the line to
+compute the diffusion coefficient.
+

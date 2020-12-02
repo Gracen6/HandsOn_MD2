@@ -1,0 +1,71 @@
+units           metal
+boundary        p p p 
+atom_style      atomic
+timestep        0.005
+
+# lattice  
+
+lattice         fcc 3.615
+region          box block 0 6 0 6 0 6
+create_box      2 box
+create_atoms    1 box
+
+# potential 
+
+pair_style      eam/alloy
+pair_coeff      * * ../../CuYM.eam.alloy Cu Cu
+
+variable	N equal atoms
+variable	N_initial equal $N
+run				0
+
+variable        E equal pe
+variable	E_initial equal $E
+compute		pea all pe/atom
+
+dump            1 all custom 1 CuT20.* id type x y z c_pea
+run             0
+thermo		50
+
+# add one interstial atom
+
+# Octahedral site
+#create_atoms	2 single 1.5 2.0 2.0 units lattice 
+
+#Tetrahedral site
+create_atoms	2 single 1.25 2.25 2.25 units lattice 
+run             1
+dump_modify     1 every 100
+
+# perform NVT relaxation, from Tstart to Tstop
+# hopping via thermal activations
+# The desired temperature at each timestep is a ramped value during the run from Tstart to Tstop.
+variable	Tstart equal 10
+variable	Tstop equal 20
+
+#  set initial velocity
+velocity        all create ${Tstart} 4928459 rot yes dist gaussian
+
+#  set a NVT run around 3000 timesteps
+fix		1 all  nvt temp ${Tstart} ${Tstop} 0.05
+run		3000
+
+# reset velocity
+velocity        all create ${Tstart} 4928459 rot yes dist gaussian
+
+# perfom a cg minimization. max iteration is 5000
+minimize        1.0e-15 1.0e-15 5000 5000
+
+# Variables to calculate Interstitial formation energy
+
+variable		Step equal step
+variable		N_added equal $N
+variable		E_added equal $E
+variable		E_inter equal ${E_added}-${E_initial}*${N_added}/${N_initial}
+
+print       	"---------------------------------------------------------------"
+print       	"   initial: 		Num = ${N_initial}	E = ${E_initial}"
+print       	"   an atom added: 	Num = ${N_added}	E = ${E_added}"
+print       	"   Interstitial Formation Energy:	IFE = ${E_inter}"
+print       	"---------------------------------------------------------------"
+
